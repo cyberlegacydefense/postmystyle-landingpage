@@ -958,6 +958,28 @@
           line-height: 1.4;
         }
 
+        /* NEW: Clipboard success styling */
+        .clipboard-success {
+          background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(129, 199, 132, 0.1));
+          border: 1px solid rgba(76, 175, 80, 0.3);
+          border-radius: 12px;
+          padding: 16px;
+          margin: 15px 0;
+          text-align: center;
+        }
+
+        .clipboard-success h4 {
+          margin: 0 0 8px 0;
+          color: #2E7D32;
+          font-size: 16px;
+        }
+
+        .clipboard-success p {
+          margin: 0;
+          color: #388E3C;
+          font-size: 14px;
+        }
+
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
@@ -1265,40 +1287,6 @@
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     const isAndroid = /Android/i.test(navigator.userAgent);
 
-    // DEBUG: Visual debugging for iOS emulator
-    function showDebugInfo() {
-      const debugDiv = document.createElement('div');
-      debugDiv.id = 'debug-info';
-      debugDiv.style.cssText = `
-        position: fixed;
-        top: 10px;
-        left: 10px;
-        background: black;
-        color: white;
-        padding: 10px;
-        border-radius: 5px;
-        font-size: 12px;
-        z-index: 9999;
-        max-width: 300px;
-      `;
-
-      debugDiv.innerHTML = `
-        <strong>DEBUG INFO:</strong><br>
-        Device: ${isMobile ? 'Mobile' : 'Desktop'}<br>
-        iOS: ${isIOS ? 'YES' : 'NO'}<br>
-        Android: ${isAndroid ? 'YES' : 'NO'}<br>
-        UserAgent: ${navigator.userAgent.substring(0, 50)}...
-      `;
-
-      document.body.appendChild(debugDiv);
-
-      // Remove after 10 seconds
-      setTimeout(() => {
-        if (debugDiv.parentNode) {
-          debugDiv.remove();
-        }
-      }, 10000);
-    }
     const SUPABASE_URL = 'https://mffqaqvjylkotkgvytro.supabase.co';
     const SUPABASE_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1mZnFhcXZqeWxrb3RrZ3Z5dHJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxMTI5MzYsImV4cCI6MjA2MTY4ODkzNn0.oUlS-JS1G9OHjwv89xZY_QRqwsoI-GE8c-ZE_U2TjDc';
 
@@ -1417,21 +1405,175 @@
       return enhancedCaption;
     }
 
-    // ENHANCED: Smart action workflows with AI integration
+    // FIXED: Unified clipboard copying function that works on all platforms
+    function copyToClipboard(text) {
+      console.log('🔄 copyToClipboard called with text length:', text.length);
+      console.log('🔄 Device: iOS =', isIOS, ', Android =', isAndroid);
+
+      // Try modern Clipboard API first (works on all modern browsers when HTTPS)
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        console.log('✅ Using modern Clipboard API');
+        navigator.clipboard.writeText(text).then(() => {
+          console.log('✅ Modern clipboard copy successful');
+          showClipboardSuccess();
+        }).catch(err => {
+          console.log('❌ Modern clipboard failed, trying fallback:', err);
+          fallbackCopyToClipboard(text);
+        });
+      } else {
+        console.log('⚠️ No modern Clipboard API, using fallback');
+        fallbackCopyToClipboard(text);
+      }
+    }
+
+    // Fallback clipboard method for older browsers
+    function fallbackCopyToClipboard(text) {
+      try {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        const copied = document.execCommand('copy');
+        document.body.removeChild(textArea);
+
+        if (copied) {
+          console.log('✅ Fallback clipboard copy successful');
+          showClipboardSuccess();
+        } else {
+          console.log('❌ Fallback clipboard copy failed');
+          showClipboardFallback(text);
+        }
+      } catch (err) {
+        console.error('❌ Fallback copy method error:', err);
+        showClipboardFallback(text);
+      }
+    }
+
+    // Show clipboard success message
+    function showClipboardSuccess() {
+      showToast('✅ Caption copied to clipboard!', 3000);
+
+      // Also show a success indicator in the page
+      showClipboardSuccessIndicator();
+    }
+
+    // Show clipboard success indicator in the page
+    function showClipboardSuccessIndicator() {
+      // Remove any existing indicators
+      const existingIndicator = document.querySelector('.clipboard-success');
+      if (existingIndicator) {
+        existingIndicator.remove();
+      }
+
+      const indicator = document.createElement('div');
+      indicator.className = 'clipboard-success';
+      indicator.innerHTML = `
+        <h4>✅ Caption Copied!</h4>
+        <p>Your caption is now ready to paste in your social media app</p>
+      `;
+
+      // Insert after smart actions
+      const smartActions = document.querySelector('.smart-actions-container');
+      if (smartActions) {
+        smartActions.insertAdjacentElement('afterend', indicator);
+
+        // Remove after 8 seconds
+        setTimeout(() => {
+          if (indicator && indicator.parentNode) {
+            indicator.remove();
+          }
+        }, 8000);
+      }
+    }
+
+    // Show caption for manual copying when automatic copying fails
+    function showClipboardFallback(text) {
+      showToast('Tap the text below to copy your caption', 4000);
+
+      // Remove any existing caption display
+      const existingCaption = document.querySelector('.manual-caption-display');
+      if (existingCaption) {
+        existingCaption.remove();
+      }
+
+      const captionDisplay = document.createElement('div');
+      captionDisplay.className = 'manual-caption-display social-instruction';
+      captionDisplay.style.background = 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(99,102,241,0.1))';
+      captionDisplay.style.borderColor = '#3b82f6';
+      captionDisplay.style.marginTop = '15px';
+
+      captionDisplay.innerHTML = `
+        <div class="social-instruction-header">
+          <span>📋</span>
+          <h4>Your Caption (Tap to Select & Copy)</h4>
+        </div>
+        <div style="font-family: monospace; padding: 12px; background: white; border-radius: 8px; margin-top: 10px; user-select: all; -webkit-user-select: all; font-size: 14px; line-height: 1.4; border: 2px dashed #3b82f6;" onclick="selectAllText(this)">
+          ${text}
+        </div>
+        <p style="margin-top: 8px; font-size: 12px; color: #666; text-align: center;">
+          <strong>Tip:</strong> Tap the text above, then "Select All" and "Copy"
+        </p>
+      `;
+
+      // Insert right after the smart actions container
+      const smartActions = document.querySelector('.smart-actions-container');
+      if (smartActions) {
+        smartActions.insertAdjacentElement('afterend', captionDisplay);
+
+        // Remove after 30 seconds
+        setTimeout(() => {
+          if (captionDisplay && captionDisplay.parentNode) {
+            captionDisplay.remove();
+          }
+        }, 30000);
+      }
+    }
+
+    // Helper function to select all text in an element
+    function selectAllText(element) {
+      if (document.selection) {
+        const range = document.body.createTextRange();
+        range.moveToElementText(element);
+        range.select();
+      } else if (window.getSelection) {
+        const range = document.createRange();
+        range.selectNode(element);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+      }
+
+      // Try to copy again after selection
+      try {
+        document.execCommand('copy');
+        showToast('✅ Text copied!');
+      } catch (err) {
+        console.log('Copy after selection failed:', err);
+      }
+    }
+
+    // FIXED: Enhanced smart action workflows with unified photo downloads
     function doInstagramFlow() {
       updateProgress(2);
       showToast('Preparing your Instagram post...');
 
-      // 1. Save all photos (if not iOS)
+      // 1. Save all photos for ALL devices (removed iOS restriction)
       const mediaItems = document.querySelectorAll('.media-item');
-      if (mediaItems.length > 0 && !isIOS) {
+      if (mediaItems.length > 0) {
+        console.log('📸 Starting photo downloads for', mediaItems.length, 'photos');
         mediaItems.forEach((item, index) => {
           setTimeout(() => {
             const downloadUrl = item.getAttribute('data-watermarked-url') ||
                                item.getAttribute('data-url') ||
                                item.src;
-            directDownload(downloadUrl, `PostMyStyle-${index + 1}.jpg`);
-          }, index * 300);
+
+            console.log(`📸 Downloading photo ${index + 1}:`, downloadUrl);
+            downloadPhotoForSharing(downloadUrl, `PostMyStyle-${index + 1}.jpg`);
+          }, index * 200); // Reduced delay for better UX
         });
       }
 
@@ -1439,83 +1581,103 @@
       setTimeout(() => {
         const enhancedCaption = createEnhancedSocialCaption();
         copyToClipboard(enhancedCaption);
-      }, 1000);
+      }, 800); // Reduced delay
 
-      // 3. For iOS: Show direct button instead of auto-opening
+      // 3. Open social platform and track
       setTimeout(() => {
-        if (isIOS) {
-          showDirectSocialButton('Instagram', 'instagram');
+        const handle = globalInstagramHandle ?
+          (globalInstagramHandle.startsWith('@') ? globalInstagramHandle : `@${globalInstagramHandle}`) : '';
+
+        if (handle) {
+          showToast(`📸 Photos saved, caption copied! Don't forget to tag ${handle}`, 4000);
         } else {
-          // For non-iOS, just open the platform directly
-          openSocialPlatform('instagram');
+          showToast('📸 Photos saved and caption copied! Ready to share!', 3000);
         }
+
+        // Open Instagram
+        openSocialPlatform('instagram');
         trackSocialClick('instagram', getMediaSendId());
-      }, 1500);
+      }, 1200);
     }
 
     function doFacebookFlow() {
       updateProgress(2);
       showToast('Preparing your Facebook post...');
 
-      // Similar to Instagram but for Facebook
+      // 1. Save all photos for ALL devices (removed iOS restriction)
       const mediaItems = document.querySelectorAll('.media-item');
-      if (mediaItems.length > 0 && !isIOS) {
+      if (mediaItems.length > 0) {
+        console.log('📸 Starting photo downloads for Facebook:', mediaItems.length, 'photos');
         mediaItems.forEach((item, index) => {
           setTimeout(() => {
             const downloadUrl = item.getAttribute('data-watermarked-url') ||
                                item.getAttribute('data-url') ||
                                item.src;
-            directDownload(downloadUrl, `PostMyStyle-${index + 1}.jpg`);
-          }, index * 300);
+            downloadPhotoForSharing(downloadUrl, `PostMyStyle-${index + 1}.jpg`);
+          }, index * 200);
         });
       }
 
+      // 2. Copy caption
       setTimeout(() => {
         const enhancedCaption = createEnhancedSocialCaption();
         copyToClipboard(enhancedCaption);
+      }, 800);
 
-        if (isIOS) {
-          showDirectSocialButton('Facebook', 'facebook');
+      // 3. Open Facebook and track
+      setTimeout(() => {
+        const handle = globalFacebookHandle ?
+          (globalFacebookHandle.startsWith('@') ? globalFacebookHandle : `@${globalFacebookHandle}`) : '';
+
+        if (handle) {
+          showToast(`📸 Photos saved, caption copied! Don't forget to tag ${handle}`, 4000);
         } else {
-          openSocialPlatform('facebook');
+          showToast('📸 Photos saved and caption copied! Ready to share!', 3000);
         }
+
+        openSocialPlatform('facebook');
         trackSocialClick('facebook', getMediaSendId());
-      }, 1500);
+      }, 1200);
     }
 
-    // NEW: TikTok Flow Function
     function doTikTokFlow() {
       updateProgress(2);
       showToast('Preparing your TikTok post...');
 
-      // 1. Save all photos (if not iOS)
+      // 1. Save all photos for ALL devices (removed iOS restriction)
       const mediaItems = document.querySelectorAll('.media-item');
-      if (mediaItems.length > 0 && !isIOS) {
+      if (mediaItems.length > 0) {
+        console.log('📸 Starting photo downloads for TikTok:', mediaItems.length, 'photos');
         mediaItems.forEach((item, index) => {
           setTimeout(() => {
             const downloadUrl = item.getAttribute('data-watermarked-url') ||
                                item.getAttribute('data-url') ||
                                item.src;
-            directDownload(downloadUrl, `PostMyStyle-${index + 1}.jpg`);
-          }, index * 300);
+            downloadPhotoForSharing(downloadUrl, `PostMyStyle-${index + 1}.jpg`);
+          }, index * 200);
         });
       }
 
-      // 2. Copy enhanced caption with AI content
+      // 2. Copy caption
       setTimeout(() => {
         const enhancedCaption = createEnhancedSocialCaption();
         copyToClipboard(enhancedCaption);
-      }, 1000);
+      }, 800);
 
-      // 3. For iOS: Show direct button instead of auto-opening
+      // 3. Open TikTok and track
       setTimeout(() => {
-        if (isIOS) {
-          showDirectSocialButton('TikTok', 'tiktok');
+        const handle = globalTikTokHandle ?
+          (globalTikTokHandle.startsWith('@') ? globalTikTokHandle : `@${globalTikTokHandle}`) : '';
+
+        if (handle) {
+          showToast(`📸 Photos saved, caption copied! Don't forget to tag ${handle}`, 4000);
         } else {
-          openSocialPlatform('tiktok');
+          showToast('📸 Photos saved and caption copied! Ready to share!', 3000);
         }
+
+        openSocialPlatform('tiktok');
         trackSocialClick('tiktok', getMediaSendId());
-      }, 1500);
+      }, 1200);
     }
 
     function doReviewFlow() {
@@ -1550,58 +1712,65 @@
       }
     }
 
-    // NEW: Show social media instructions
-    function showSocialInstructions(platform) {
-      let salonHandle = '';
-      if (platform === 'Instagram') {
-        salonHandle = globalInstagramHandle;
-      } else if (platform === 'Facebook') {
-        salonHandle = globalFacebookHandle;
-      } else if (platform === 'TikTok') {
-        salonHandle = globalTikTokHandle;
-      }
+    // FIXED: Unified photo downloading function that works on all platforms
+    function downloadPhotoForSharing(url, filename) {
+      console.log('📥 downloadPhotoForSharing called for:', filename, 'on device:', isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop');
 
-      const handleText = salonHandle ? `Don't forget to tag ${salonHandle.startsWith('@') ? salonHandle : '@' + salonHandle}!` : '';
+      try {
+        // Use fetch + blob approach which works on all modern browsers including iOS Safari
+        fetch(url)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.blob();
+          })
+          .then(blob => {
+            console.log('📥 Blob created successfully for:', filename, 'Size:', blob.size);
 
-      showToast(`Photos saved & caption copied! ${handleText} 📸`, 4000);
+            const blobUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = filename;
+            link.style.display = 'none';
 
-      // Add instruction overlay
-      setTimeout(() => {
-        addSocialInstructionToPage(platform, salonHandle);
-      }, 2000);
-    }
+            // Add to DOM, click, then remove
+            document.body.appendChild(link);
+            link.click();
 
-    function addSocialInstructionToPage(platform, salonHandle) {
-      // Remove any existing instruction
-      const existingInstruction = document.querySelector('.social-instruction');
-      if (existingInstruction) {
-        existingInstruction.remove();
-      }
+            console.log('📥 Download link clicked for:', filename);
 
-      const instruction = document.createElement('div');
-      instruction.className = 'social-instruction';
+            // Clean up after a short delay
+            setTimeout(() => {
+              try {
+                URL.revokeObjectURL(blobUrl);
+                if (document.body.contains(link)) {
+                  document.body.removeChild(link);
+                }
+                console.log('📥 Cleanup completed for:', filename);
+              } catch (cleanupError) {
+                console.warn('📥 Cleanup warning for:', filename, cleanupError);
+              }
+            }, 1000);
+          })
+          .catch(err => {
+            console.error('📥 Download failed for:', filename, err);
 
-      const handleText = salonHandle ? ` and tag ${salonHandle.startsWith('@') ? salonHandle : '@' + salonHandle}` : '';
+            // Fallback for iOS: open in new tab if download fails
+            if (isIOS) {
+              console.log('📥 iOS fallback: opening in new tab');
+              window.open(url, '_blank');
+            } else {
+              console.error('📥 Download failed and not iOS, no fallback available');
+            }
+          });
+      } catch (err) {
+        console.error('📥 Error in downloadPhotoForSharing:', err);
 
-      instruction.innerHTML = `
-        <div class="social-instruction-header">
-          <span>📱</span>
-          <h4>Perfect! Now create your ${platform} post</h4>
-        </div>
-        <p>Your photos are saved and caption copied. Upload to ${platform}${handleText} to share your amazing transformation!</p>
-      `;
-
-      // Insert after smart actions
-      const smartActions = document.querySelector('.smart-actions-container');
-      if (smartActions) {
-        smartActions.insertAdjacentElement('afterend', instruction);
-
-        // Remove after 10 seconds
-        setTimeout(() => {
-          if (instruction && instruction.parentNode) {
-            instruction.remove();
-          }
-        }, 10000);
+        // Final fallback
+        if (isIOS) {
+          window.open(url, '_blank');
+        }
       }
     }
 
@@ -1612,22 +1781,24 @@
       }
       const modal = document.getElementById('helpModal');
       const instructions = document.getElementById('saveInstructions');
+
       if (isIOS) {
         instructions.innerHTML = `
           <p>On your iPhone/iPad, there are two ways to save photos:</p>
           <ol>
-            <li><strong>Tap any photo</strong> to view it full screen</li>
-            <li>Then <strong>press and hold</strong> on the image</li>
+            <li><strong>Use the Smart Share buttons above</strong> - they automatically save photos when you share</li>
+            <li><strong>Or manually:</strong> Tap any photo to view it full screen, then press and hold on the image</li>
             <li>Tap <strong>"Add to Photos"</strong> from the menu</li>
             <li>Tap the <strong>blue X button</strong> at the top right to return to this page</li>
           </ol>
-          <p>Repeat for each photo you want to save.</p>
+          <p><strong>Recommended:</strong> Use the Instagram/Facebook/TikTok buttons above for automatic photo saving!</p>
         `;
       } else if (isAndroid) {
         instructions.innerHTML = `
           <p>On your Android device:</p>
           <ol>
-            <li><strong>Tap "Save Photo"</strong> under each image</li>
+            <li><strong>Use the Smart Share buttons above</strong> - they automatically save photos when you share</li>
+            <li><strong>Or manually:</strong> Tap "Save Photo" under each image</li>
             <li>The photos will download automatically</li>
             <li>If prompted, select <strong>"Download"</strong></li>
             <li>You'll find the photos in your <strong>Downloads</strong> folder or <strong>Gallery</strong></li>
@@ -1637,7 +1808,8 @@
         instructions.innerHTML = `
           <p>To save your photos:</p>
           <ol>
-            <li><strong>Click "Save Photo"</strong> under each image</li>
+            <li><strong>Use the Smart Share buttons above</strong> - they automatically save photos when you share</li>
+            <li><strong>Or manually:</strong> Click "Save Photo" under each image</li>
             <li>The photos will download automatically to your device</li>
             <li>You can find them in your Downloads folder</li>
           </ol>
@@ -1664,88 +1836,6 @@
 
     function closeImageModal() {
       document.getElementById('imageModal').style.display = 'none';
-    }
-
-    // Content functions
-    function copyToClipboard(text) {
-      // For iOS, we'll handle caption display differently since we're using in-place cards
-      if (isIOS) {
-        showToast('Caption ready! Check below the social cards for your caption.', 4000);
-
-        // Show caption in a compact area below social cards for iOS
-        setTimeout(() => {
-          // Remove any existing caption display
-          const existingCaption = document.querySelector('.ios-caption-display');
-          if (existingCaption) {
-            existingCaption.remove();
-          }
-
-          const captionDisplay = document.createElement('div');
-          captionDisplay.className = 'ios-caption-display social-instruction';
-          captionDisplay.style.background = 'linear-gradient(135deg, rgba(59,130,246,0.1), rgba(99,102,241,0.1))';
-          captionDisplay.style.borderColor = '#3b82f6';
-          captionDisplay.style.marginTop = '15px';
-
-          captionDisplay.innerHTML = `
-            <div class="social-instruction-header">
-              <span>📋</span>
-              <h4>Your Caption (Tap to Select)</h4>
-            </div>
-            <div style="font-family: monospace; padding: 10px; background: white; border-radius: 8px; margin-top: 10px; user-select: all; -webkit-user-select: all; font-size: 14px; line-height: 1.4;" onclick="selectText(this)">
-              ${text}
-            </div>
-            <p style="margin-top: 8px; font-size: 12px; color: #666; text-align: center;">
-              <strong>Tip:</strong> Tap the text above, then "Select All" and "Copy"
-            </p>
-          `;
-
-          // Insert right after the smart actions container
-          const smartActions = document.querySelector('.smart-actions-container');
-          if (smartActions) {
-            smartActions.insertAdjacentElement('afterend', captionDisplay);
-
-            // Remove after 25 seconds
-            setTimeout(() => {
-              if (captionDisplay && captionDisplay.parentNode) {
-                captionDisplay.remove();
-              }
-            }, 25000);
-          }
-        }, 500);
-        return;
-      }
-
-      // For non-iOS devices, try standard clipboard API
-      try {
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        document.body.appendChild(textArea);
-        textArea.select();
-        const copied = document.execCommand('copy');
-        document.body.removeChild(textArea);
-        if (copied) {
-          showToast('Caption copied! Ready to paste in your social app.');
-        } else {
-          throw new Error('execCommand returned false');
-        }
-      } catch (err) {
-        console.error('Fallback copy method error:', err);
-        showToast('Could not copy automatically. Caption is shown below for manual copying.');
-      }
-    }
-
-    // NEW: Helper function to select text
-    function selectText(element) {
-      if (document.selection) {
-        const range = document.body.createTextRange();
-        range.moveToElementText(element);
-        range.select();
-      } else if (window.getSelection) {
-        const range = document.createRange();
-        range.selectNode(element);
-        window.getSelection().removeAllRanges();
-        window.getSelection().addRange(range);
-      }
     }
 
     // Legacy function for backwards compatibility
@@ -2121,46 +2211,19 @@
       return wrapper;
     }
 
-    // Photo functions
-    function directDownload(url, filename) {
-      try {
-        fetch(url)
-          .then(response => response.blob())
-          .then(blob => {
-            const blobUrl = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = filename;
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            setTimeout(() => {
-              URL.revokeObjectURL(blobUrl);
-              document.body.removeChild(link);
-            }, 100);
-          })
-          .catch(err => {
-            console.error('Direct download failed:', err);
-            if (isIOS) {
-              window.open(url, '_blank');
-            }
-          });
-      } catch (err) {
-        console.error('Error in directDownload:', err);
-        if (isIOS) {
-          window.open(url, '_blank');
-        }
-      }
-    }
-
+    // FIXED: Photo functions with unified download approach
     function savePhoto(url, index, button) {
       if (button) {
         button.textContent = 'Saving...';
         button.className = 'save-button saving';
         button.disabled = true;
       }
+
       try {
+        console.log('💾 savePhoto called for index:', index, 'iOS:', isIOS);
+
         if (isIOS) {
+          // For iOS, show the modal for manual saving
           showImageModal(url);
           if (button) {
             setTimeout(() => {
@@ -2171,7 +2234,10 @@
           }
           return;
         }
-        directDownload(url, `PostMyStyle-${index}.jpg`);
+
+        // For all other devices, use the unified download function
+        downloadPhotoForSharing(url, `PostMyStyle-${index}.jpg`);
+
         if (button) {
           button.textContent = 'Saved!';
           button.className = 'save-button saved';
@@ -2181,9 +2247,11 @@
             button.disabled = false;
           }, 2000);
         }
+
         showToast(`Saving photo ${index}...`);
+
       } catch (error) {
-        console.error('Error saving photo:', error);
+        console.error('Error in savePhoto:', error);
         if (button) {
           button.textContent = 'Retry';
           button.className = 'save-button error';
@@ -2199,10 +2267,12 @@
         showToast('No photos to save');
         return;
       }
+
       if (isIOS) {
         showHelpModal();
         return;
       }
+
       showToast(`Saving ${mediaItems.length} watermarked photos...`);
       mediaItems.forEach((item, index) => {
         setTimeout(() => {
@@ -2213,7 +2283,7 @@
                              item.getAttribute('data-url') ||
                              item.src;
           savePhoto(downloadUrl, index + 1, button);
-        }, index * 800);
+        }, index * 300); // Reduced delay for better UX
       });
     }
 
@@ -2251,7 +2321,7 @@
       }
     }
 
-    // UPDATED: Simplified social platform function (mainly for non-iOS)
+    // UPDATED: Simplified social platform function for all devices
     function openSocialPlatform(platform) {
       const urls = {
         'instagram': 'https://www.instagram.com/',
@@ -2262,125 +2332,26 @@
       const url = urls[platform];
       if (url) {
         console.log(`🔗 Opening ${platform} for user content creation`);
-        window.open(url, '_blank');
-      }
-    }
 
-    // NEW: Show direct social media button for iOS (replaces the original button)
-    function showDirectSocialButton(platform, platformKey) {
-      // Find the specific card that was clicked
-      const clickedCard = document.querySelector(`.${platformKey}-card`);
-      if (!clickedCard) {
-        console.error(`Could not find ${platformKey}-card`);
-        return;
-      }
+        try {
+          const newWindow = window.open(url, '_blank');
 
-      // Store original content in case we need to restore it
-      const originalContent = clickedCard.innerHTML;
-
-      // Get salon handle for this platform
-      const salonHandle = getSalonHandle(platformKey);
-      const handleText = salonHandle ? ` and tag ${salonHandle.startsWith('@') ? salonHandle : '@' + salonHandle}` : '';
-
-      // Replace the card content with success state and direct button
-      clickedCard.innerHTML = `
-        <div class="action-icon">
-          <span style="font-size: 36px;">✅</span>
-        </div>
-        <h4 style="color: #4CAF50;">Ready to Share!</h4>
-        <p style="color: #333;"><strong>Photos saved and caption ready!</strong><br>
-        Tap below to open ${platform}${handleText}:</p>
-        <button onclick="directOpenSocial('${platformKey}')"
-                class="smart-action-btn ${platformKey}-btn"
-                style="margin-top: 10px;">
-          Open ${platform} Now
-        </button>
-      `;
-
-      // Add success styling to the card
-      clickedCard.style.borderColor = '#4CAF50';
-      clickedCard.style.transform = 'scale(1.02)';
-      clickedCard.style.transition = 'all 0.3s ease';
-
-      // Restore original card after 20 seconds
-      setTimeout(() => {
-        if (clickedCard) {
-          clickedCard.innerHTML = originalContent;
-          clickedCard.style.borderColor = '';
-          clickedCard.style.transform = '';
-        }
-      }, 20000);
-    }
-
-    // NEW: Direct social platform opener (for direct user clicks) - Try bypassing ITP
-    function directOpenSocial(platform) {
-      // Try different URL patterns that might bypass ITP
-      let urls = {};
-
-      if (platform === 'instagram') {
-        urls = {
-          primary: 'https://instagram.com',  // No www, no trailing slash
-          fallback1: 'https://www.instagram.com/accounts/emailsignup/',  // Specific page
-          fallback2: 'https://about.instagram.com'  // Different subdomain
-        };
-      } else if (platform === 'facebook') {
-        urls = {
-          primary: 'https://facebook.com',  // No www, no trailing slash
-          fallback1: 'https://www.facebook.com/reg/',  // Specific page
-          fallback2: 'https://about.facebook.com'  // Different subdomain
-        };
-      } else if (platform === 'tiktok') {
-        urls = {
-          primary: 'https://tiktok.com',  // No www, no trailing slash
-          fallback1: 'https://www.tiktok.com/signup',  // Specific page
-          fallback2: 'https://newsroom.tiktok.com'  // Different subdomain
-        };
-      }
-
-      // Try primary URL first
-      showToast(`Opening ${platform}...`);
-
-      try {
-        const newWindow = window.open(urls.primary, '_blank');
-
-        // Check if it worked after a short delay
-        setTimeout(() => {
+          // Check if popup was blocked
           if (!newWindow || newWindow.closed) {
-            showToast(`Primary URL blocked, trying alternative...`);
+            console.log(`⚠️ Popup blocked for ${platform}, trying fallback`);
 
-            // Try fallback 1
+            // Fallback: try opening without _blank
             setTimeout(() => {
-              const fallbackWindow = window.open(urls.fallback1, '_blank');
-
-              setTimeout(() => {
-                if (!fallbackWindow || fallbackWindow.closed) {
-                  showToast(`Trying final alternative...`);
-
-                  // Try fallback 2
-                  setTimeout(() => {
-                    window.open(urls.fallback2, '_blank');
-                  }, 500);
-                }
-              }, 1000);
-            }, 500);
+              window.location.href = url;
+            }, 100);
           } else {
-            showToast(`✅ ${platform} opened successfully!`);
+            console.log(`✅ ${platform} opened successfully`);
           }
-        }, 1000);
-
-      } catch (error) {
-        console.error('Error in directOpenSocial:', error);
-        showToast(`Error: ${error.message}`);
-      }
-    }
-
-    // NEW: Get salon handle by platform
-    function getSalonHandle(platform) {
-      switch(platform) {
-        case 'instagram': return globalInstagramHandle;
-        case 'facebook': return globalFacebookHandle;
-        case 'tiktok': return globalTikTokHandle;
-        default: return '';
+        } catch (error) {
+          console.error(`❌ Error opening ${platform}:`, error);
+          // Final fallback: direct navigation
+          window.location.href = url;
+        }
       }
     }
 
@@ -2550,7 +2521,7 @@
       if (isIOS && mediaCount > 0) {
         const instruction = document.createElement('div');
         instruction.className = 'instruction';
-        instruction.innerHTML = '<strong>Tip:</strong> Tap any photo to view it larger, then press and hold to save it to your Photos. Your salon watermark is embedded in each image! Look for the <strong>blue X button</strong> to return to this page.';
+        instruction.innerHTML = '<strong>Tip:</strong> Use the Smart Share buttons above for automatic photo saving, or tap any photo to view it larger and press & hold to save it to your Photos. Your salon watermark is embedded in each image! Look for the <strong>blue X button</strong> to return to this page.';
         mediaGrid.parentNode.insertBefore(instruction, mediaGrid);
       }
 
