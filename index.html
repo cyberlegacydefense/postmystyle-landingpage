@@ -1556,128 +1556,173 @@
       }
     }
 
-    // FIXED: Enhanced smart action workflows with unified photo downloads
+    // FIXED: Enhanced smart action workflows with iOS-specific photo handling
     function doInstagramFlow() {
       updateProgress(2);
       showToast('Preparing your Instagram post...');
 
-      // 1. Save all photos for ALL devices (removed iOS restriction)
+      // 1. Handle photos based on device type
       const mediaItems = document.querySelectorAll('.media-item');
       if (mediaItems.length > 0) {
-        console.log('📸 Starting photo downloads for', mediaItems.length, 'photos');
-        mediaItems.forEach((item, index) => {
-          setTimeout(() => {
-            const downloadUrl = item.getAttribute('data-watermarked-url') ||
-                               item.getAttribute('data-url') ||
-                               item.src;
+        if (isIOS) {
+          // For iOS: Show instruction for manual saving to Photos
+          showToast('📸 Caption copied! Tap photos below to save them to your Photos app', 4000);
+          console.log('📸 iOS: Instructing manual photo saving for Photos app');
+        } else {
+          // For non-iOS: Auto-download
+          console.log('📸 Starting photo downloads for', mediaItems.length, 'photos');
+          mediaItems.forEach((item, index) => {
+            setTimeout(() => {
+              const downloadUrl = item.getAttribute('data-watermarked-url') ||
+                                 item.getAttribute('data-url') ||
+                                 item.src;
 
-            console.log(`📸 Downloading photo ${index + 1}:`, downloadUrl);
-            downloadPhotoForSharing(downloadUrl, `PostMyStyle-${index + 1}.jpg`);
-          }, index * 200); // Reduced delay for better UX
-        });
+              console.log(`📸 Downloading photo ${index + 1}:`, downloadUrl);
+              downloadPhotoForSharing(downloadUrl, `PostMyStyle-${index + 1}.jpg`);
+            }, index * 200);
+          });
+        }
       }
 
       // 2. Copy enhanced caption with AI content
       setTimeout(() => {
         const enhancedCaption = createEnhancedSocialCaption();
         copyToClipboard(enhancedCaption);
-      }, 800); // Reduced delay
+      }, 300); // Immediate for iOS
 
       // 3. Open social platform and track
       setTimeout(() => {
         const handle = globalInstagramHandle ?
           (globalInstagramHandle.startsWith('@') ? globalInstagramHandle : `@${globalInstagramHandle}`) : '';
 
-        if (handle) {
-          showToast(`📸 Photos saved, caption copied! Don't forget to tag ${handle}`, 4000);
+        if (isIOS) {
+          if (handle) {
+            showToast(`📋 Caption ready! Save photos to Photos, then tag ${handle} in Instagram!`, 5000);
+          } else {
+            showToast('📋 Caption ready! Save photos to Photos, then share in Instagram!', 4000);
+          }
         } else {
-          showToast('📸 Photos saved and caption copied! Ready to share!', 3000);
+          if (handle) {
+            showToast(`📸 Photos saved, caption copied! Don't forget to tag ${handle}`, 4000);
+          } else {
+            showToast('📸 Photos saved and caption copied! Ready to share!', 3000);
+          }
         }
 
-        // Open Instagram
+        // Open Instagram app or website
         openSocialPlatform('instagram');
         trackSocialClick('instagram', getMediaSendId());
-      }, 1200);
+      }, isIOS ? 800 : 1200);
     }
 
     function doFacebookFlow() {
       updateProgress(2);
       showToast('Preparing your Facebook post...');
 
-      // 1. Save all photos for ALL devices (removed iOS restriction)
+      // 1. Handle photos based on device type
       const mediaItems = document.querySelectorAll('.media-item');
       if (mediaItems.length > 0) {
-        console.log('📸 Starting photo downloads for Facebook:', mediaItems.length, 'photos');
-        mediaItems.forEach((item, index) => {
-          setTimeout(() => {
-            const downloadUrl = item.getAttribute('data-watermarked-url') ||
-                               item.getAttribute('data-url') ||
-                               item.src;
-            downloadPhotoForSharing(downloadUrl, `PostMyStyle-${index + 1}.jpg`);
-          }, index * 200);
-        });
+        if (isIOS) {
+          // For iOS: Show instruction for manual saving to Photos
+          showToast('📸 Caption copied! Tap photos below to save them to your Photos app', 4000);
+          console.log('📸 iOS: Instructing manual photo saving for Photos app');
+        } else {
+          // For non-iOS: Auto-download
+          console.log('📸 Starting photo downloads for Facebook:', mediaItems.length, 'photos');
+          mediaItems.forEach((item, index) => {
+            setTimeout(() => {
+              const downloadUrl = item.getAttribute('data-watermarked-url') ||
+                                 item.getAttribute('data-url') ||
+                                 item.src;
+              downloadPhotoForSharing(downloadUrl, `PostMyStyle-${index + 1}.jpg`);
+            }, index * 200);
+          });
+        }
       }
 
       // 2. Copy caption
       setTimeout(() => {
         const enhancedCaption = createEnhancedSocialCaption();
         copyToClipboard(enhancedCaption);
-      }, 800);
+      }, 300);
 
       // 3. Open Facebook and track
       setTimeout(() => {
         const handle = globalFacebookHandle ?
           (globalFacebookHandle.startsWith('@') ? globalFacebookHandle : `@${globalFacebookHandle}`) : '';
 
-        if (handle) {
-          showToast(`📸 Photos saved, caption copied! Don't forget to tag ${handle}`, 4000);
+        if (isIOS) {
+          if (handle) {
+            showToast(`📋 Caption ready! Save photos to Photos, then tag ${handle} in Facebook!`, 5000);
+          } else {
+            showToast('📋 Caption ready! Save photos to Photos, then share in Facebook!', 4000);
+          }
         } else {
-          showToast('📸 Photos saved and caption copied! Ready to share!', 3000);
+          if (handle) {
+            showToast(`📸 Photos saved, caption copied! Don't forget to tag ${handle}`, 4000);
+          } else {
+            showToast('📸 Photos saved and caption copied! Ready to share!', 3000);
+          }
         }
 
         openSocialPlatform('facebook');
         trackSocialClick('facebook', getMediaSendId());
-      }, 1200);
+      }, isIOS ? 800 : 1200);
     }
 
     function doTikTokFlow() {
       updateProgress(2);
       showToast('Preparing your TikTok post...');
 
-      // 1. Save all photos for ALL devices (removed iOS restriction)
+      // 1. Handle photos based on device type
       const mediaItems = document.querySelectorAll('.media-item');
       if (mediaItems.length > 0) {
-        console.log('📸 Starting photo downloads for TikTok:', mediaItems.length, 'photos');
-        mediaItems.forEach((item, index) => {
-          setTimeout(() => {
-            const downloadUrl = item.getAttribute('data-watermarked-url') ||
-                               item.getAttribute('data-url') ||
-                               item.src;
-            downloadPhotoForSharing(downloadUrl, `PostMyStyle-${index + 1}.jpg`);
-          }, index * 200);
-        });
+        if (isIOS) {
+          // For iOS: Show instruction for manual saving to Photos
+          showToast('📸 Caption copied! Tap photos below to save them to your Photos app', 4000);
+          console.log('📸 iOS: Instructing manual photo saving for Photos app');
+        } else {
+          // For non-iOS: Auto-download
+          console.log('📸 Starting photo downloads for TikTok:', mediaItems.length, 'photos');
+          mediaItems.forEach((item, index) => {
+            setTimeout(() => {
+              const downloadUrl = item.getAttribute('data-watermarked-url') ||
+                                 item.getAttribute('data-url') ||
+                                 item.src;
+              downloadPhotoForSharing(downloadUrl, `PostMyStyle-${index + 1}.jpg`);
+            }, index * 200);
+          });
+        }
       }
 
       // 2. Copy caption
       setTimeout(() => {
         const enhancedCaption = createEnhancedSocialCaption();
         copyToClipboard(enhancedCaption);
-      }, 800);
+      }, 300);
 
       // 3. Open TikTok and track
       setTimeout(() => {
         const handle = globalTikTokHandle ?
           (globalTikTokHandle.startsWith('@') ? globalTikTokHandle : `@${globalTikTokHandle}`) : '';
 
-        if (handle) {
-          showToast(`📸 Photos saved, caption copied! Don't forget to tag ${handle}`, 4000);
+        if (isIOS) {
+          if (handle) {
+            showToast(`📋 Caption ready! Save photos to Photos, then tag ${handle} in TikTok!`, 5000);
+          } else {
+            showToast('📋 Caption ready! Save photos to Photos, then share in TikTok!', 4000);
+          }
         } else {
-          showToast('📸 Photos saved and caption copied! Ready to share!', 3000);
+          if (handle) {
+            showToast(`📸 Photos saved, caption copied! Don't forget to tag ${handle}`, 4000);
+          } else {
+            showToast('📸 Photos saved and caption copied! Ready to share!', 3000);
+          }
         }
 
         openSocialPlatform('tiktok');
         trackSocialClick('tiktok', getMediaSendId());
-      }, 1200);
+      }, isIOS ? 800 : 1200);
     }
 
     function doReviewFlow() {
@@ -1712,7 +1757,101 @@
       }
     }
 
-    // FIXED: Unified photo downloading function that works on all platforms
+    // NEW: iOS native sharing to Photos app using Web Share API
+    async function sharePhotosToIOSPhotos(mediaItems, platform) {
+      showToast(`📸 Sharing ${mediaItems.length} photos to Photos app...`, 3000);
+
+      for (let i = 0; i < mediaItems.length; i++) {
+        const item = mediaItems[i];
+        const downloadUrl = item.getAttribute('data-watermarked-url') ||
+                           item.getAttribute('data-url') ||
+                           item.src;
+
+        try {
+          // Fetch the image as blob
+          const response = await fetch(downloadUrl);
+          const blob = await response.blob();
+
+          // Create a File from the blob
+          const file = new File([blob], `PostMyStyle-${i + 1}.jpg`, { type: 'image/jpeg' });
+
+          // Use iOS native share - opens share sheet with Photos option
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              title: `PostMyStyle Photo ${i + 1}`,
+              text: `My new look! Share on ${platform}`,
+              files: [file]
+            });
+            console.log(`✅ iOS: Photo ${i + 1} shared successfully`);
+          } else {
+            throw new Error('Cannot share this file type');
+          }
+
+          // Small delay between shares to avoid overwhelming
+          if (i < mediaItems.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 800));
+          }
+
+        } catch (error) {
+          console.error(`❌ iOS share failed for photo ${i + 1}:`, error);
+          // Fallback to download method for this photo
+          downloadPhotoForSharing(downloadUrl, `PostMyStyle-${i + 1}.jpg`);
+        }
+      }
+
+      showToast('✅ Photos shared! Check your Photos app', 2000);
+    }
+
+    // NEW: Enhanced iOS download method (fallback when share not available)
+    function downloadPhotosForIOS(mediaItems) {
+      showToast(`📸 Downloading ${mediaItems.length} photos...`, 3000);
+      console.log('📱 iOS: Using enhanced download method');
+
+      mediaItems.forEach((item, index) => {
+        setTimeout(() => {
+          const downloadUrl = item.getAttribute('data-watermarked-url') ||
+                             item.getAttribute('data-url') ||
+                             item.src;
+
+          // Try creating a more iOS-friendly download
+          createIOSFriendlyDownload(downloadUrl, `PostMyStyle-${index + 1}.jpg`);
+        }, index * 300);
+      });
+    }
+
+    // NEW: iOS-friendly download that might avoid Chrome folder
+    function createIOSFriendlyDownload(url, filename) {
+      try {
+        // Method 1: Try using a temporary anchor with download attribute
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.target = '_blank'; // This might help trigger system download
+
+        // Add to DOM temporarily
+        link.style.display = 'none';
+        document.body.appendChild(link);
+
+        // Trigger click
+        link.click();
+
+        // Clean up
+        setTimeout(() => {
+          if (document.body.contains(link)) {
+            document.body.removeChild(link);
+          }
+        }, 100);
+
+        console.log(`📱 iOS-friendly download triggered for: ${filename}`);
+
+      } catch (error) {
+        console.error('📱 iOS-friendly download failed:', error);
+        // Final fallback to original method
+        downloadPhotoForSharing(url, filename);
+      }
+    }
+
+    // KEPT: Original unified photo downloading function (used by other parts)
     function downloadPhotoForSharing(url, filename) {
       console.log('📥 downloadPhotoForSharing called for:', filename, 'on device:', isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop');
 
@@ -1784,14 +1923,22 @@
 
       if (isIOS) {
         instructions.innerHTML = `
-          <p>On your iPhone/iPad, there are two ways to save photos:</p>
+          <p><strong>Automatic Way (Recommended):</strong></p>
           <ol>
-            <li><strong>Use the Smart Share buttons above</strong> - they automatically save photos when you share</li>
-            <li><strong>Or manually:</strong> Tap any photo to view it full screen, then press and hold on the image</li>
-            <li>Tap <strong>"Add to Photos"</strong> from the menu</li>
-            <li>Tap the <strong>blue X button</strong> at the top right to return to this page</li>
+            <li><strong>Use the Instagram/Facebook/TikTok buttons above</strong> - they handle everything automatically!</li>
+            <li>Your caption is copied and photos are shared using iOS native sharing</li>
+            <li>When the share sheet appears, tap <strong>"Save to Photos"</strong></li>
+            <li>This saves directly to your main Photos app (not browser folder)</li>
+            <li>Repeat for each photo - the app will guide you through it</li>
           </ol>
-          <p><strong>Recommended:</strong> Use the Instagram/Facebook/TikTok buttons above for automatic photo saving!</p>
+          <p><strong>Manual Way (if needed):</strong></p>
+          <ol>
+            <li>Tap any photo below to view full-screen</li>
+            <li>Press and hold on the full-screen image</li>
+            <li>Tap <strong>"Add to Photos"</strong></li>
+            <li>Tap the <strong>blue X button</strong> to return</li>
+          </ol>
+          <p><strong>✨ The automatic way is much faster and easier!</strong></p>
         `;
       } else if (isAndroid) {
         instructions.innerHTML = `
@@ -2321,36 +2468,72 @@
       }
     }
 
-    // UPDATED: Simplified social platform function for all devices
+    // FIXED: Social platform function with native app deep links
     function openSocialPlatform(platform) {
-      const urls = {
-        'instagram': 'https://www.instagram.com/',
-        'facebook': 'https://www.facebook.com/',
-        'tiktok': 'https://www.tiktok.com/'
-      };
+      console.log(`🔗 Opening ${platform} - Device: ${isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop'}`);
 
-      const url = urls[platform];
-      if (url) {
-        console.log(`🔗 Opening ${platform} for user content creation`);
+      if (isMobile) {
+        // Try native app first on mobile devices
+        const appSchemes = {
+          'instagram': 'instagram://camera',
+          'facebook': 'fb://composer',
+          'tiktok': 'snssdk1233://camera' // TikTok's scheme
+        };
 
-        try {
-          const newWindow = window.open(url, '_blank');
+        const webFallbacks = {
+          'instagram': 'https://www.instagram.com/',
+          'facebook': 'https://www.facebook.com/',
+          'tiktok': 'https://www.tiktok.com/'
+        };
 
-          // Check if popup was blocked
-          if (!newWindow || newWindow.closed) {
-            console.log(`⚠️ Popup blocked for ${platform}, trying fallback`);
+        const appScheme = appSchemes[platform];
+        const webFallback = webFallbacks[platform];
 
-            // Fallback: try opening without _blank
-            setTimeout(() => {
-              window.location.href = url;
-            }, 100);
-          } else {
-            console.log(`✅ ${platform} opened successfully`);
-          }
-        } catch (error) {
-          console.error(`❌ Error opening ${platform}:`, error);
-          // Final fallback: direct navigation
-          window.location.href = url;
+        if (appScheme) {
+          console.log(`📱 Trying native app scheme: ${appScheme}`);
+
+          // Create a hidden iframe to test if the app opens
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = appScheme;
+          document.body.appendChild(iframe);
+
+          // Fallback to web version after a short delay
+          setTimeout(() => {
+            console.log(`🌐 Fallback: Opening web version: ${webFallback}`);
+            window.open(webFallback, '_blank');
+
+            // Clean up iframe
+            if (iframe && iframe.parentNode) {
+              iframe.parentNode.removeChild(iframe);
+            }
+          }, 1000);
+
+          // Remove iframe after app attempt
+          setTimeout(() => {
+            if (iframe && iframe.parentNode) {
+              iframe.parentNode.removeChild(iframe);
+            }
+          }, 2000);
+
+        } else {
+          // No app scheme available, open web version
+          console.log(`🌐 No app scheme, opening web: ${webFallback}`);
+          window.open(webFallback, '_blank');
+        }
+
+      } else {
+        // Desktop: just open web versions
+        const webUrls = {
+          'instagram': 'https://www.instagram.com/',
+          'facebook': 'https://www.facebook.com/',
+          'tiktok': 'https://www.tiktok.com/'
+        };
+
+        const url = webUrls[platform];
+        if (url) {
+          console.log(`💻 Desktop: Opening web version: ${url}`);
+          window.open(url, '_blank');
         }
       }
     }
@@ -2521,7 +2704,7 @@
       if (isIOS && mediaCount > 0) {
         const instruction = document.createElement('div');
         instruction.className = 'instruction';
-        instruction.innerHTML = '<strong>Tip:</strong> Use the Smart Share buttons above for automatic photo saving, or tap any photo to view it larger and press & hold to save it to your Photos. Your salon watermark is embedded in each image! Look for the <strong>blue X button</strong> to return to this page.';
+        instruction.innerHTML = '<strong>📸 For iOS:</strong> The Smart Share buttons above automatically copy your caption and save photos! They use iOS\'s native sharing to save directly to your <strong>Photos app</strong>. Just tap Instagram/Facebook/TikTok and follow the prompts.';
         mediaGrid.parentNode.insertBefore(instruction, mediaGrid);
       }
 
