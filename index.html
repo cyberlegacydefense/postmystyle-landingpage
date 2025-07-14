@@ -1757,101 +1757,7 @@
       }
     }
 
-    // NEW: iOS native sharing to Photos app using Web Share API
-    async function sharePhotosToIOSPhotos(mediaItems, platform) {
-      showToast(`📸 Sharing ${mediaItems.length} photos to Photos app...`, 3000);
-
-      for (let i = 0; i < mediaItems.length; i++) {
-        const item = mediaItems[i];
-        const downloadUrl = item.getAttribute('data-watermarked-url') ||
-                           item.getAttribute('data-url') ||
-                           item.src;
-
-        try {
-          // Fetch the image as blob
-          const response = await fetch(downloadUrl);
-          const blob = await response.blob();
-
-          // Create a File from the blob
-          const file = new File([blob], `PostMyStyle-${i + 1}.jpg`, { type: 'image/jpeg' });
-
-          // Use iOS native share - opens share sheet with Photos option
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({
-              title: `PostMyStyle Photo ${i + 1}`,
-              text: `My new look! Share on ${platform}`,
-              files: [file]
-            });
-            console.log(`✅ iOS: Photo ${i + 1} shared successfully`);
-          } else {
-            throw new Error('Cannot share this file type');
-          }
-
-          // Small delay between shares to avoid overwhelming
-          if (i < mediaItems.length - 1) {
-            await new Promise(resolve => setTimeout(resolve, 800));
-          }
-
-        } catch (error) {
-          console.error(`❌ iOS share failed for photo ${i + 1}:`, error);
-          // Fallback to download method for this photo
-          downloadPhotoForSharing(downloadUrl, `PostMyStyle-${i + 1}.jpg`);
-        }
-      }
-
-      showToast('✅ Photos shared! Check your Photos app', 2000);
-    }
-
-    // NEW: Enhanced iOS download method (fallback when share not available)
-    function downloadPhotosForIOS(mediaItems) {
-      showToast(`📸 Downloading ${mediaItems.length} photos...`, 3000);
-      console.log('📱 iOS: Using enhanced download method');
-
-      mediaItems.forEach((item, index) => {
-        setTimeout(() => {
-          const downloadUrl = item.getAttribute('data-watermarked-url') ||
-                             item.getAttribute('data-url') ||
-                             item.src;
-
-          // Try creating a more iOS-friendly download
-          createIOSFriendlyDownload(downloadUrl, `PostMyStyle-${index + 1}.jpg`);
-        }, index * 300);
-      });
-    }
-
-    // NEW: iOS-friendly download that might avoid Chrome folder
-    function createIOSFriendlyDownload(url, filename) {
-      try {
-        // Method 1: Try using a temporary anchor with download attribute
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        link.target = '_blank'; // This might help trigger system download
-
-        // Add to DOM temporarily
-        link.style.display = 'none';
-        document.body.appendChild(link);
-
-        // Trigger click
-        link.click();
-
-        // Clean up
-        setTimeout(() => {
-          if (document.body.contains(link)) {
-            document.body.removeChild(link);
-          }
-        }, 100);
-
-        console.log(`📱 iOS-friendly download triggered for: ${filename}`);
-
-      } catch (error) {
-        console.error('📱 iOS-friendly download failed:', error);
-        // Final fallback to original method
-        downloadPhotoForSharing(url, filename);
-      }
-    }
-
-    // KEPT: Original unified photo downloading function (used by other parts)
+    // KEPT: Original unified photo downloading function
     function downloadPhotoForSharing(url, filename) {
       console.log('📥 downloadPhotoForSharing called for:', filename, 'on device:', isIOS ? 'iOS' : isAndroid ? 'Android' : 'Desktop');
 
@@ -1923,22 +1829,20 @@
 
       if (isIOS) {
         instructions.innerHTML = `
-          <p><strong>Automatic Way (Recommended):</strong></p>
+          <p><strong>Automatic Way (Quick & Easy):</strong></p>
           <ol>
             <li><strong>Use the Instagram/Facebook/TikTok buttons above</strong> - they handle everything automatically!</li>
-            <li>Your caption is copied and photos are shared using iOS native sharing</li>
-            <li>When the share sheet appears, tap <strong>"Save to Photos"</strong></li>
-            <li>This saves directly to your main Photos app (not browser folder)</li>
-            <li>Repeat for each photo - the app will guide you through it</li>
+            <li>Caption copies to clipboard and photos download automatically</li>
+            <li>Photos will be in your Downloads or Files app</li>
           </ol>
-          <p><strong>Manual Way (if needed):</strong></p>
+          <p><strong>To save directly to Photos app:</strong></p>
           <ol>
             <li>Tap any photo below to view full-screen</li>
             <li>Press and hold on the full-screen image</li>
-            <li>Tap <strong>"Add to Photos"</strong></li>
+            <li>Tap <strong>"Add to Photos"</strong> to save to your main Photos app</li>
             <li>Tap the <strong>blue X button</strong> to return</li>
           </ol>
-          <p><strong>✨ The automatic way is much faster and easier!</strong></p>
+          <p><strong>💡 Tip:</strong> Both methods work great - use whichever you prefer!</p>
         `;
       } else if (isAndroid) {
         instructions.innerHTML = `
@@ -2704,7 +2608,7 @@
       if (isIOS && mediaCount > 0) {
         const instruction = document.createElement('div');
         instruction.className = 'instruction';
-        instruction.innerHTML = '<strong>📸 For iOS:</strong> The Smart Share buttons above automatically copy your caption and save photos! They use iOS\'s native sharing to save directly to your <strong>Photos app</strong>. Just tap Instagram/Facebook/TikTok and follow the prompts.';
+        instruction.innerHTML = '<strong>📸 For iOS:</strong> The Smart Share buttons automatically copy captions and download photos. If photos save to your browser folder instead of Photos app, you can also tap any photo below to view full-screen and press & hold to "Add to Photos" for direct Photos app saving.';
         mediaGrid.parentNode.insertBefore(instruction, mediaGrid);
       }
 
