@@ -1757,62 +1757,56 @@
       }
     }
 
-    // FIXED: iOS Photos app saving using Web Share API
+    // REQUIRED: iOS Photos app saving using Web Share API
     async function saveToIOSPhotos(url, filename) {
       try {
-        // Check if Web Share API with files is supported (iOS Safari 14+)
-        if (!navigator.share || !navigator.canShare) {
-          throw new Error('Web Share API not supported');
-        }
-
-        console.log('📱 iOS: Using Web Share API for Photos app saving:', filename);
-
-        // Fetch the image and convert to blob
+        // Fetch the image
         const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
         const blob = await response.blob();
+
+        // Create File object
         const file = new File([blob], filename, { type: 'image/jpeg' });
 
-        // Check if we can share this file
-        if (navigator.canShare({ files: [file] })) {
-          // Open iOS share sheet with "Save to Photos" option
+        // Check if Web Share API supports files
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          // This opens iOS share sheet with "Save to Photos" option
           await navigator.share({
+            files: [file],
             title: 'Save to Photos',
-            text: 'My new style from PostMyStyle',
-            files: [file]
+            text: 'PostMyStyle photo'
           });
-
-          console.log('✅ iOS share sheet opened for:', filename);
           return true;
         } else {
-          throw new Error('Cannot share this file type');
+          throw new Error('Web Share API not supported');
         }
-
       } catch (error) {
-        console.log('❌ iOS Web Share failed:', error.message);
-        // Fallback to regular download
+        console.error('Web Share failed:', error);
         return false;
       }
     }
 
-    // Enhanced directDownload with iOS Photos support
-    async function directDownload(url, filename) {
-      try {
-        // For iOS, try Photos app saving first
-        if (isIOS) {
-          const photosSuccess = await saveToIOSPhotos(url, filename);
-          if (photosSuccess) {
-            console.log('✅ iOS: Photos app save initiated');
-            return; // Success - iOS share sheet opened
-          }
-          // If Photos saving failed, fall back to regular download
-          console.log('⚠️ iOS: Falling back to regular download');
+    // iOS Photos saving with modal fallback
+    async function saveImageToPhotos(url, filename, index) {
+      if (isIOS) {
+        // Try Web Share API first
+        const webShareWorked = await saveToIOSPhotos(url, filename);
+        if (webShareWorked) {
+          showToast(`Photo ${index} - tap "Save to Photos" in the share sheet`, 3000);
+          return;
         }
 
-        // Regular download for non-iOS or iOS fallback
+        // Fallback: show modal for manual Photos saving
+        showImageModal(url);
+        showToast('Press and hold image → "Add to Photos"', 3000);
+      } else {
+        // Non-iOS: regular download
+        directDownload(url, filename);
+      }
+    }
+
+    // Simple download for non-iOS devices
+    function directDownload(url, filename) {
+      try {
         fetch(url)
           .then(response => response.blob())
           .then(blob => {
@@ -1827,18 +1821,9 @@
               URL.revokeObjectURL(blobUrl);
               document.body.removeChild(link);
             }, 100);
-          })
-          .catch(err => {
-            console.error('Direct download failed:', err);
-            if (isIOS) {
-              window.open(url, '_blank');
-            }
           });
       } catch (err) {
-        console.error('Error in directDownload:', err);
-        if (isIOS) {
-          window.open(url, '_blank');
-        }
+        console.error('Download failed:', err);
       }
     }
 
@@ -1852,22 +1837,20 @@
 
       if (isIOS) {
         instructions.innerHTML = `
-          <p><strong>🎉 NEW: Direct Photos app saving now works!</strong></p>
-          <p><strong>Best method - Use Smart Share buttons:</strong></p>
+          <p><strong>Automatic (Smart Share buttons):</strong></p>
           <ol>
-            <li><strong>Click Instagram/Facebook/TikTok buttons above</strong></li>
-            <li>Caption copies automatically to clipboard</li>
-            <li>iOS share sheet opens for each photo</li>
-            <li><strong>Tap "Save to Photos"</strong> in each share sheet</li>
-            <li>Photos save directly to your Photos app! ✅</li>
+            <li>Use Instagram/Facebook/TikTok buttons above</li>
+            <li>Caption copies and photos download automatically</li>
+            <li>Photos may save to Downloads/Files folder</li>
           </ol>
-          <p><strong>Alternative method:</strong></p>
+          <p><strong>Manual (for Photos app):</strong></p>
           <ol>
             <li>Tap any photo below to view full-screen</li>
             <li>Press and hold on the image</li>
             <li>Tap "Add to Photos"</li>
+            <li>Tap blue X to return</li>
           </ol>
-          <p><strong>💡 The Smart Share method is much faster and easier!</strong></p>
+          <p><strong>💡 Try the automatic method first - it's much faster!</strong></p>
         `;
       } else if (isAndroid) {
         instructions.innerHTML = `
@@ -2631,7 +2614,7 @@
       if (isIOS && mediaCount > 0) {
         const instruction = document.createElement('div');
         instruction.className = 'instruction';
-        instruction.innerHTML = '<strong>📸 For iOS:</strong> Smart Share buttons copy captions and open iOS share sheets for each photo. Tap <strong>"Save to Photos"</strong> in each share sheet to save directly to your Photos app! Much easier than manual saving.';
+        instruction.innerHTML = '<strong>📸 iOS:</strong> Smart Share buttons copy captions and try to download photos. If downloads go to browser folder instead of Photos, use the manual method: tap any photo → full screen → press & hold → "Add to Photos".';
         mediaGrid.parentNode.insertBefore(instruction, mediaGrid);
       }
 
